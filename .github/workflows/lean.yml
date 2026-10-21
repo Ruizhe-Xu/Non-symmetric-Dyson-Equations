@@ -1,0 +1,84 @@
+name: Lean verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lean-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Compile and audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    env:
+      LEAN_NUM_THREADS: "1"
+    steps:
+      - name: Check out sources
+        uses: actions/checkout@v4
+
+      # Historical reports are provided as a provenance snapshot only. They must
+      # never be mistaken for evidence produced by this CI run.
+      - name: Clear archived audit outputs
+        run: |
+          rm -f validation/verification.json
+          rm -f validation/axiom_audit.log validation/theorem_signatures.log
+          rm -f validation/proof_routes.log validation/private_name_discovery.log
+          rm -f validation/build_checks.json
+
+      - name: Prepare manuscript and theorem audit entry points
+        run: python3 scripts/verify.py --prepare
+
+      - name: Build Lean source with the pinned Mathlib revision
+        uses: leanprover/lean-action@v1
+        with:
+          auto-config: "false"
+          build: "true"
+          test: "false"
+          lint: "false"
+          use-mathlib-cache: "true"
+          use-github-cache: "true"
+
+      # Since `lake build` already compiled Dyson.lean and all its imports,
+      # seed only those source files whose .olean was actually produced.
+      # scripts/verify.py --incremental still checks every SHA256, resolves
+      # private theorem names, and runs all the kernel axiom/signature audits.
+      - name: Audit all paper-facing and backend theorems
+        run: |
+          python3 scripts/ci_seed_build_checks.py
+          python3 scripts/verify.py --incremental
+
+      - name: Show audit result
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          v = json.loads(Path('validation/verification.json').read_text())
+          print(f"Audited {v['module_count']} modules and {v['theorem_count']} declarations")
+          print('Global axioms:', v['axioms_used'])
+          print('PASS:', v['passed'])
+          print('WARNING: explicit general theorem hypotheses are not discharged by this audit.')
+          assert v['passed']
+          PY
+
+      - name: Upload fresh verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dyson-verification-${{ github.run_id }}
+          path: |
+            validation/verification.json
+            validation/axiom_audit.log
+            validation/theorem_signatures.log
+            validation/proof_routes.log
+            validation/private_name_discovery.log
+          if-no-files-found: warn
+          retention-days: 30

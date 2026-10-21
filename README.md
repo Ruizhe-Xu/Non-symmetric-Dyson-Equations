@@ -1,0 +1,74 @@
+# Non-symmetric Vector Dyson Equations — Lean 4 Formalization
+
+A Lean 4 / Mathlib formalization accompanying the manuscript **Non-symmetric Vector Dyson Equations** by **Jiaoyang Huang, Zhonggen Su, and Ruizhe Xu**.
+
+**Verification scope.** The paper-facing conclusions are formalized *relative to explicit general mathematical hypotheses*. Some standard results from spectral theory, Stieltjes theory, algebraic and analytic function theory, Perron–Frobenius theory, and perturbation theory are passed as theorem arguments; their proofs are **not** all formalized in this repository. A successful `lake build` or global axiom audit does **not** discharge these hypotheses. See [External arguments](EXTERNAL_ARGUMENTS.md) and [Fidelity review](FIDELITY_REVIEW.md).
+
+## Mathematical setting
+
+We consider the nonsymmetric vector Dyson equation
+
+$$
+-\frac{1}{m_i(z)}=z-a_i+\sum_{j=1}^d s_{ij}m_j(z),
+\qquad z\in\mathbb{C}_+,\quad S=(s_{ij})\geq0,
+$$
+
+with a nonnegative finite matrix $S$ that need not be symmetric. The manuscript analyzes canonical solutions, representing measures, boundary regularity, regular edges and cusps, and linear and nonlinear stability in the symmetric and non-backtracking settings.
+
+## Main results
+
+The main entry point is [`Dyson/Paper/Main.lean`](Dyson/Paper/Main.lean). The full paper-facing development is imported by [`Dyson/Paper.lean`](Dyson/Paper.lean).
+
+| Manuscript result | Content | Example Lean entry point |
+|---|---|---|
+| M1 | Existence, uniqueness, analyticity, and representing measures | [`FoundationsTree.tree_existence_and_uniqueness`](Dyson/Paper/FoundationsTree.lean) |
+| M2 | Boundary values, measure decomposition, and common support | [`BoundaryTree.singular_sets_and_boundary_values`](Dyson/Paper/BoundaryTree.lean) |
+| M3 | Modulus and imaginary-part comparisons | [`RegularityTree.boundedness_of_solution`](Dyson/Paper/RegularityTree.lean) |
+| M4 | Restricted measures and two-point Hölder regularity | [`RegularityTree.regularity_of_solution`](Dyson/Paper/RegularityTree.lean) |
+| M5 | Edge and cusp density asymptotics (Sym/NB) | [`SingularitiesAsymptotics.edge_symmetric`](Dyson/Paper/SingularitiesAsymptotics.lean) |
+| M6 | Linear stability off support, in the bulk, and at edges/cusps | [`LinearEdge.edge_symmetric`](Dyson/Paper/LinearEdge.lean) |
+| M7 | Nonlinear stability, balance, and continuous branches | [`Nonlinear.main_theorem_seven_bulk`](Dyson/Paper/NonlinearStable.lean) |
+
+The cyclic-matrix appendix and signed Jacobi / non-backtracking Green-function recursion also have Lean entry points. See [Paper entry points](PAPER_ENTRYPOINTS.md) and the [correspondence table](CORRESPONDENCE.md) for the complete mapping, including the manuscript's 23 labeled results.
+
+## Status and qualifications
+
+The **original supplied verification record** reports 315 project modules, 1,916 named theorem/lemma/alias declarations, and 14 separately checked proof routes, compiled with Lean **4.24.0**. It reports the global axioms `propext`, `Classical.choice`, and `Quot.sound`, with no project-added `axiom`, `sorry`, `admit`, `native_decide`, or `unsafe`. These are historical records from the source release, **not newly reproduced results from this streamlined archive**.
+
+The mathematical conclusions rely on the explicitly stated theorem hypotheses described in [EXTERNAL_ARGUMENTS.md](EXTERNAL_ARGUMENTS.md); those assumptions are not shown by a global axiom listing. Two necessary manuscript clarifications concern the fixed positive anchor in M7 and the permitted smaller neighborhood for the bipartite-origin estimate. See [FORMALIZATION_STATUS.md](FORMALIZATION_STATUS.md) and [FIDELITY_REVIEW.md](FIDELITY_REVIEW.md).
+
+## Build and verification
+
+The project pins Lean 4.24.0 and a specific Mathlib commit through [`lean-toolchain`](lean-toolchain), [`lakefile.toml`](lakefile.toml), and [`lake-manifest.json`](lake-manifest.json).
+
+```bash
+lake exe cache get
+lake build
+python3 scripts/verify.py
+```
+
+The last command checks the project sources and generates theorem-signature, global-axiom, and proof-route audit reports in `validation/`. For the main statements only:
+
+```lean
+import Dyson.Paper.Main
+```
+
+The [GitHub Actions workflow](.github/workflows/lean.yml) builds the project on pushes and pull requests to `main`, and can also be started manually. Upon a completed run, its **Artifacts** section contains fresh audit logs. A green workflow status certifies that the configured build and audits succeeded; it does not prove the external mathematical hypotheses.
+
+## Repository structure
+
+| Path | Purpose |
+|---|---|
+| [`Dyson/`](Dyson/) and [`Dyson.lean`](Dyson.lean) | Original Lean proof modules, unchanged |
+| [`Dyson/Paper/`](Dyson/Paper/) | Manuscript-facing statements and proofs |
+| [`Dyson/Full/`](Dyson/Full/) | Reusable proof backend |
+| [`CORRESPONDENCE.md`](CORRESPONDENCE.md) / [`PAPER_ENTRYPOINTS.md`](PAPER_ENTRYPOINTS.md) | Manuscript-to-Lean mappings |
+| [`EXTERNAL_ARGUMENTS.md`](EXTERNAL_ARGUMENTS.md) / [`FIDELITY_REVIEW.md`](FIDELITY_REVIEW.md) | Mathematical hypotheses and fidelity clarifications |
+| [`FORMALIZATION_STATUS.md`](FORMALIZATION_STATUS.md) | Formalization status and recorded audit scope |
+| [`source/`](source/) | Original and clarified manuscript TeX |
+| [`scripts/verify.py`](scripts/verify.py) / [`ProofRouteAudit.lean`](ProofRouteAudit.lean) | Verification and proof-dependency checks |
+| [`.github/workflows/lean.yml`](.github/workflows/lean.yml) | Automated Lean build and audit |
+
+The repository is a streamlined distribution: older drafts, progress notes, historical validation logs, generated audit sources, and nonessential release scripts have been omitted. The verification script regenerates its audit files and reports as needed.
+
+No license or publication identifier is asserted here; publication permissions and appropriate attribution should be confirmed before changing the repository visibility to public.

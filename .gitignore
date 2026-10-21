@@ -1,0 +1,20 @@
+# Lake and Lean build products
+.lake/
+*.olean
+*.ilean
+*.so
+
+# Generated audit sources and reports (recreated by scripts/verify.py)
+/AxiomAudit.lean
+/SignatureAudit.lean
+/JointAxiomAudit.lean
+/PrivateAuditDiscovery.lean
+/theorem_inventory.json
+/validation/
+
+# Editor / OS / Python caches
+.DS_Store
+.vscode/
+.idea/
+__pycache__/
+*.pyc
